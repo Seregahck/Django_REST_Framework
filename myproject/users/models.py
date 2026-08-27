@@ -1,8 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-
-
-# from courses.models import Course, Lesson  # ВРЕМЕННО ЗАКОММЕНТИРОВАНО
+from courses.models import Course, Lesson
 
 
 class UserManager(BaseUserManager):
@@ -62,23 +60,23 @@ class Payment(models.Model):
         auto_now_add=True,
         verbose_name='Дата оплаты'
     )
-    # ВРЕМЕННО ЗАКОММЕНТИРОВАНО
-    # paid_course = models.ForeignKey(
-    #     Course,
-    #     on_delete=models.CASCADE,
-    #     null=True,
-    #     blank=True,
-    #     related_name='payments',
-    #     verbose_name='Оплаченный курс'
-    # )
-    # paid_lesson = models.ForeignKey(
-    #     Lesson,
-    #     on_delete=models.CASCADE,
-    #     null=True,
-    #     blank=True,
-    #     related_name='payments',
-    #     verbose_name='Оплаченный урок'
-    # )
+
+    paid_course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='payments',
+        verbose_name='Оплаченный курс'
+    )
+    paid_lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='payments',
+        verbose_name='Оплаченный урок'
+    )
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
