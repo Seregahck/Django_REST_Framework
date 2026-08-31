@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from courses.models import Course, Lesson
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -51,7 +51,7 @@ class Payment(models.Model):
     ]
 
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='payments',
         verbose_name='Пользователь'
@@ -62,7 +62,7 @@ class Payment(models.Model):
     )
 
     paid_course = models.ForeignKey(
-        Course,
+        'courses.Course',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -70,7 +70,7 @@ class Payment(models.Model):
         verbose_name='Оплаченный курс'
     )
     paid_lesson = models.ForeignKey(
-        Lesson,
+        'courses.Lesson',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
