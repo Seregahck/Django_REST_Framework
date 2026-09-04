@@ -1,28 +1,58 @@
 from rest_framework import serializers
-from .models import Course, Lesson
+from django.db import models
+from .models import Course, Lesson, Subscription
+from .validators import validate_youtube_url
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    owner_username = serializers.CharField(source='owner.username', read_only=True)
+    link = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        validators=[validate_youtube_url]  # ⬅️ ДОБАВЛЕН ВАЛИДАТОР
+    )
 
     class Meta:
         model = Lesson
-        fields = ['id', 'title', 'description', 'course', 'owner', 'owner_username', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = [
+            'id', 'name', 'description', 'link',
+            'course', 'owner', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['owner', 'created_at', 'updated_at']
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    lesson_count = serializers.SerializerMethodField()
-    lessons = LessonSerializer(many=True, read_only=True)
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    owner_username = serializers.CharField(source='owner.username', read_only=True)
+    is_subscribed = serializers.SerializerMethodField()  # ⬅️ НОВОЕ ПОЛЕ
+    lessons_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'owner', 'owner_username', 'created_at', 'updated_at', 'lesson_count',
-                  'lessons']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = [
+            'id', 'name', 'description', 'owner',
+            'created_at', 'updated_at', 'lessons_count', 'is_subscribed'
+        ]
+        read_only_fields = ['owner', 'created_at', 'updated_at']
 
-    def get_lesson_count(self, obj):
-        return obj.lessons.count()
+    def get_is_subscribed(self, obj):
+        """Проверка подписки текущего пользователя на курс"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.objects.filter(
+                user=request.user,
+                course=obj
+            ).exists()
+        return False
+
+
+class CourseDetailSerializer(CourseSerializer):
+    lessons = LessonSerializer(many=True, read_only=True)
+
+    class Meta(CourseSerializer.Meta):
+        fields = CourseSerializer.Meta.fields + ['lessons']
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['id', 'user', 'course', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
