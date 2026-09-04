@@ -1,62 +1,75 @@
 from django.db import models
-from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import MinLengthValidator, MaxLengthValidator
+
+User = get_user_model()
 
 
 class Course(models.Model):
-    title = models.CharField(max_length=255, verbose_name='Название')
-    description = models.TextField(verbose_name='Описание')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='owned_courses',
-        verbose_name='Владелец',
-        null=True,
-        blank=True
+    name = models.CharField(
+        max_length=100,
+        validators=[MinLengthValidator(3), MaxLengthValidator(100)]
     )
+    description = models.TextField(blank=True, null=True)
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='courses_owned'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Курс'
-        verbose_name_plural = 'Курсы'
-        permissions = [
-            ('can_view_course', 'Может просматривать курсы'),
-            ('can_change_course', 'Может изменять курсы'),
-            ('can_delete_course', 'Может удалять курсы'),
-        ]
+        ordering = ['-created_at']
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class Lesson(models.Model):
-    title = models.CharField(max_length=255, verbose_name='Название')
-    description = models.TextField(verbose_name='Описание')
+    name = models.CharField(
+        max_length=100,
+        validators=[MinLengthValidator(3), MaxLengthValidator(100)]
+    )
+    description = models.TextField(blank=True, null=True)
+    link = models.URLField(max_length=200, blank=True, null=True)
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
-        related_name='lessons',
-        verbose_name='Курс'
+        related_name='lessons'
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
-        related_name='owned_lessons',
-        verbose_name='Владелец',
-        null=True,
-        blank=True
+        related_name='lessons_owned'
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Урок'
-        verbose_name_plural = 'Уроки'
-        permissions = [
-            ('can_view_lesson', 'Может просматривать уроки'),
-            ('can_change_lesson', 'Может изменять уроки'),
-            ('can_delete_lesson', 'Может удалять уроки'),
-        ]
+        ordering = ['-created_at']
 
     def __str__(self):
-        return self.title
+        return self.name
+
+
+class Subscription(models.Model):
+    """Модель подписки на курс"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='subscriptions'
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='subscribers'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'course']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course.name}"
