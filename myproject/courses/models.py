@@ -72,4 +72,4 @@ class Subscription(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user.username} - {self.course.name}"
+        return f"{self.user.email} - {self.course.name}"
